@@ -1,5 +1,6 @@
 <?php
 session_start();
+header("Content-Type: application/json");
 
 $DB_HOST = getenv("DB_HOST");
 $DB_USER = getenv("DB_USER");
@@ -12,7 +13,7 @@ mysqli_report(MYSQLI_REPORT_OFF);
 $conn = mysqli_init();
 mysqli_ssl_set($conn, NULL, NULL, NULL, NULL, NULL);
 
-mysqli_real_connect(
+$connected = mysqli_real_connect(
   $conn,
   $DB_HOST,
   $DB_USER,
@@ -23,10 +24,21 @@ mysqli_real_connect(
   MYSQLI_CLIENT_SSL
 );
 
-if (!$conn) {
+if (!$connected) {
   http_response_code(500);
-  header("Content-Type: application/json");
-  echo json_encode(["ok" => false, "error" => "db_connect_failed"]);
+  echo json_encode([
+    "ok" => false,
+    "error" => "db_connect_failed",
+    "errno" => mysqli_connect_errno(),
+    "message" => mysqli_connect_error()
+  ]);
+  exit();
+}
+
+$action = isset($_GET["action"]) ? $_GET["action"] : "";
+
+function out($arr) {
+  echo json_encode($arr);
   exit();
 }
 
