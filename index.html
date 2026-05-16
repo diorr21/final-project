@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Computer Science Project</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="wrapper">
+
+<div id="loginBox">
+  <div class="toptext">Judge Login</div>
+  <br>
+  Username: <input type="text" id="username" class="inputBox">
+  <br><br>
+  Password: <input type="password" id="password" class="inputBox">
+  <br><br>
+  <button class="btn" id="loginBtn">Login</button>
+  <br><br>
+  <span id="loginMsg"></span>
+</div>
+
+<div id="judgeBox" class="hidden">
+  <a href="#" id="logoutLink">Logout</a>
+  <br><br>
+
+  <table>
+    <tr class="titleRow">
+      <td colspan="3">Computer Science Project</td>
+    </tr>
+
+    <tr class="grayRow">
+      <td>Group Members: <input type="text" id="group_members" class="inputBox"></td>
+      <td colspan="2">Group Number: <input type="text" id="group_number" class="inputBox"></td>
+    </tr>
+
+    <tr class="grayRow">
+      <td colspan="3">Project Title: <input type="text" id="project_title" class="inputBox"></td>
+    </tr>
+
+    <tr class="grayRow">
+      <td class="criteriaHead">Criteria</td>
+      <td>Developing(0-10)</td>
+      <td>Accomplished(11-15)</td>
+    </tr>
+
+    <tr class="bigCell">
+      <td class="criteriaHead">Articulate requirements</td>
+      <td><input type="number" id="d1" class="scoreBox"></td>
+      <td><input type="number" id="a1" class="scoreBox"></td>
+    </tr>
+
+    <tr class="bigCell">
+      <td class="criteriaHead">Choose appropriate tools and<br>methods for each task</td>
+      <td><input type="number" id="d2" class="scoreBox"></td>
+      <td><input type="number" id="a2" class="scoreBox"></td>
+    </tr>
+
+    <tr class="bigCell">
+      <td class="criteriaHead">Give clear and coherent oral<br>presentation</td>
+      <td><input type="number" id="d3" class="scoreBox"></td>
+      <td><input type="number" id="a3" class="scoreBox"></td>
+    </tr>
+
+    <tr class="bigCell">
+      <td class="criteriaHead">Functioned well as a team</td>
+      <td><input type="number" id="d4" class="scoreBox"></td>
+      <td><input type="number" id="a4" class="scoreBox"></td>
+    </tr>
+
+    <tr class="grayRow">
+      <td colspan="2" class="center">Total</td>
+      <td><span id="totalText"></span></td>
+    </tr>
+
+    <tr class="grayRow">
+      <td colspan="3">Judge's name: <span id="judgeName"></span></td>
+    </tr>
+
+    <tr class="grayRow">
+      <td colspan="3">Comments: <input type="text" id="comments" class="inputBox"></td>
+    </tr>
+  </table>
+
+  <button class="btn" id="submitBtn">Submit</button>
+  <br><br>
+  <span id="submitMsg"></span>
+  <br>
+  <span id="avgMsg"></span>
+  <br><br>
+
+  Once judges enter grades and hit submit button, it will compute each judge's total as well as the average grade for the group and save it in a database.<br>
+  Admin with proper credential then can access the database to get those averages.<br>
+  When a judge enters a grade in the Developing column, he or she cannot enter a grade in the Accomplished column for the same category. Therefore, make sure to disable or dim that option.<br>
+</div>
+
+<div id="adminBox" class="hidden">
+  <a href="#" id="logoutLink2">Logout</a>
+  <br><br>
+  Admin Page
+  <br><br>
+  <table>
+    <tr class="titleRow">
+      <td colspan="3">Group Averages</td>
+    </tr>
+    <tr class="grayRow">
+      <td>Group Number</td>
+      <td>Average</td>
+      <td>Submissions</td>
+    </tr>
+    <tbody id="adminRows"></tbody>
+  </table>
+  <br>
+  <button class="btn" id="refreshAdmin">Refresh</button>
+</div>
+
+</div>
+
+<script>
+function $(id){ return document.getElementById(id); }
+
+function linkDisable(devId, accId){
+  var dev = $(devId);
+  var acc = $(accId);
+
+  dev.addEventListener("input", function(){
+    if(dev.value !== ""){
+      acc.disabled = true;
+      acc.classList.add("dim");
+    } else {
+      acc.disabled = false;
+      acc.classList.remove("dim");
+    }
+    updateTotal();
+  });
+
+  acc.addEventListener("input", function(){
+    if(acc.value !== ""){
+      dev.disabled = true;
+      dev.classList.add("dim");
+    } else {
+      dev.disabled = false;
+      dev.classList.remove("dim");
+    }
+    updateTotal();
+  });
+}
+
+function numberVal(id){
+  var v = $(id).value;
+  if(v === "" || v === null) return 0;
+  return Number(v);
+}
+
+function updateTotal(){
+  var total = 0;
+  total += numberVal("d1") + numberVal("a1");
+  total += numberVal("d2") + numberVal("a2");
+  total += numberVal("d3") + numberVal("a3");
+  total += numberVal("d4") + numberVal("a4");
+  $("totalText").innerText = total;
+}
+
+linkDisable("d1","a1");
+linkDisable("d2","a2");
+linkDisable("d3","a3");
+linkDisable("d4","a4");
+updateTotal();
+
+function showLogin(){
+  $("loginBox").classList.remove("hidden");
+  $("judgeBox").classList.add("hidden");
+  $("adminBox").classList.add("hidden");
+}
+
+function showJudge(user){
+  $("judgeName").innerText = user;
+  $("loginBox").classList.add("hidden");
+  $("judgeBox").classList.remove("hidden");
+  $("adminBox").classList.add("hidden");
+}
+
+function showAdmin(){
+  $("loginBox").classList.add("hidden");
+  $("judgeBox").classList.add("hidden");
+  $("adminBox").classList.remove("hidden");
+}
+
+async function post(action, dataObj){
+  var form = new FormData();
+  for(var k in dataObj){ form.append(k, dataObj[k]); }
+  var res = await fetch("server.php?action=" + action, { method:"POST", body: form });
+  return await res.json();
+}
+
+async function get(action){
+  var res = await fetch("server.php?action=" + action);
+  return await res.json();
+}
+
+$("loginBtn").addEventListener("click", async function(){
+  $("loginMsg").innerText = "";
+  var u = $("username").value;
+  var p = $("password").value;
+
+  var r = await post("login", { username:u, password:p });
+  if(r.ok){
+    if(r.role === "admin"){
+      showAdmin();
+      loadAdmin();
+    } else {
+      showJudge(r.user);
+    }
+  } else {
+    $("loginMsg").innerText = "Invalid login";
+  }
+});
+
+$("logoutLink").addEventListener("click", async function(e){
+  e.preventDefault();
+  await get("logout");
+  showLogin();
+});
+
+$("logoutLink2").addEventListener("click", async function(e){
+  e.preventDefault();
+  await get("logout");
+  showLogin();
+});
+
+$("submitBtn").addEventListener("click", async function(){
+  $("submitMsg").innerText = "";
+  $("avgMsg").innerText = "";
+
+var payload = {
+  group_number: $("group_number").value,
+  group_members: $("group_members").value,
+  project_title: $("project_title").value,
+  comments: $("comments").value,
+  d1: $("d1").value, a1: $("a1").value,
+  d2: $("d2").value, a2: $("a2").value,
+  d3: $("d3").value, a3: $("a3").value,
+  d4: $("d4").value, a4: $("a4").value
+};
+
+  var r = await post("submit", payload);
+  if(r.ok){
+    $("submitMsg").innerText = "Submitted. Judge Total = " + r.judge_total;
+    $("avgMsg").innerText = "Group Average = " + r.group_average.toFixed(2);
+  } else {
+      if(r.error === "group_required") $("submitMsg").innerText = "Group Number is required";
+      else if(r.error === "members_required") $("submitMsg").innerText = "Group Members is required";
+      else if(r.error === "title_required") $("submitMsg").innerText = "Project Title is required";
+      else $("submitMsg").innerText = "Submit failed";
+  }
+});
+
+async function loadAdmin(){
+  var r = await get("admin");
+  if(!r.ok){ return; }
+  var html = "";
+  for(var i=0;i<r.rows.length;i++){
+    var row = r.rows[i];
+    html += "<tr>";
+    html += "<td>"+ row.group_number +"</td>";
+    html += "<td>"+ Number(row.avg_total).toFixed(2) +"</td>";
+    html += "<td>"+ row.submissions +"</td>";
+    html += "</tr>";
+  }
+  $("adminRows").innerHTML = html;
+}
+
+$("refreshAdmin").addEventListener("click", function(){
+  loadAdmin();
+});
+
+(async function(){
+  var r = await get("session");
+  if(r.ok){
+    if(r.role === "admin"){
+      showAdmin();
+      loadAdmin();
+    } else {
+      showJudge(r.user);
+    }
+  } else {
+    showLogin();
+  }
+})();
+</script>
+
+</body>
+</html>
