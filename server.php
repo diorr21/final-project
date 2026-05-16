@@ -1,26 +1,32 @@
 <?php
 session_start();
 
-$DB_HOST = getenv("DB_HOST") ? getenv("DB_HOST") : "localhost";
-$DB_USER = getenv("DB_USER") ? getenv("DB_USER") : "root";
-$DB_PASS = getenv("DB_PASS") ? getenv("DB_PASS") : "";
-$DB_NAME = getenv("DB_NAME") ? getenv("DB_NAME") : "grading_system";
-$DB_PORT = getenv("DB_PORT") ? (int)getenv("DB_PORT") : 3306;
+$DB_HOST = getenv("DB_HOST");
+$DB_USER = getenv("DB_USER");
+$DB_PASS = getenv("DB_PASS");
+$DB_NAME = getenv("DB_NAME");
+$DB_PORT = (int)getenv("DB_PORT");
 
-$conn = mysqli_connect($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME, $DB_PORT);
+mysqli_report(MYSQLI_REPORT_OFF);
+
+$conn = mysqli_init();
+mysqli_ssl_set($conn, NULL, NULL, NULL, NULL, NULL);
+
+mysqli_real_connect(
+  $conn,
+  $DB_HOST,
+  $DB_USER,
+  $DB_PASS,
+  $DB_NAME,
+  $DB_PORT,
+  NULL,
+  MYSQLI_CLIENT_SSL
+);
+
 if (!$conn) {
   http_response_code(500);
   header("Content-Type: application/json");
   echo json_encode(["ok" => false, "error" => "db_connect_failed"]);
-  exit();
-}
-
-header("Content-Type: application/json");
-
-$action = isset($_GET["action"]) ? $_GET["action"] : "";
-
-function out($arr) {
-  echo json_encode($arr);
   exit();
 }
 
